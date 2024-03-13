@@ -59,10 +59,12 @@ def decrypt_data(encrypted_data, tag, password, salt, iv):
     return decrypted_data
 
 
-def run_cipher_benchmark(key_size):
+def run_cipher_benchmark(key_size, data_size):
     # Generar datos y contraseña para cifrar
     password = "mi_contraseña_secreta"
-    data = os.urandom(1024 * 1024)  # 1 MB de datos aleatorios
+    data = os.urandom(1024*1024*data_size)
+    print("\n#################################################",data_size, "MB #################################################")
+    print("#################################################",key_size, "bits #################################################")
 
     # Medir el tiempo de cifrado
     start_time = time.time()
@@ -78,7 +80,7 @@ def run_cipher_benchmark(key_size):
     brute_force_strength = measure_brute_force_strength(key_size)
 
     # Mostrar resultados
-    print(f"\n### Resultados para clave de {key_size} bits ###")
+    print(f"\n### RESULTADOS ###")
     print("Tiempo de cifrado:", encryption_time, "segundos")
     print("Tiempo de descifrado:", decryption_time, "segundos")
     print("Fortaleza contra ataques de fuerza bruta:", brute_force_strength)
@@ -130,8 +132,10 @@ def measure_brute_force_strength(key_size):
         return f"Fracasó ({elapsed_time} segundos)"
 
     elapsed_time = time.time() - start_time
-    return f"Éxito (Tiempo: {elapsed_time} segundos)"
+    return f"Éxito (Tiempo: {elapsed_time} segundos)\n"
 
 # Ejecutar pruebas para diferentes tamaños de clave
-for key_size in [32, 24, 16]:
-    run_cipher_benchmark(key_size)
+for data_size in [1, 16, 64, 256]:
+    run_cipher_benchmark(128, data_size)
+    run_cipher_benchmark(192, data_size)
+    run_cipher_benchmark(256, data_size)

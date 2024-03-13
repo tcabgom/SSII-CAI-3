@@ -4,6 +4,7 @@ from sympy import symbols, interpolate
 
 THRESHOLD = 5
 TOTAL_SHARES = 10
+NUM_TESTS = 50
 
 def generate_shares(secret):
     prime = 2**256 - 189
@@ -26,16 +27,23 @@ def reconstruct_secret(shares, threshold):
     return secret
 
 def test_shamir():
-    secret_key = int.from_bytes(os.urandom(32), 'big')
-    shares = generate_shares(secret_key)
-    print("#####   PRUEBA DE SHAMIR   #####\n- Total de acciones generadas: {}\n- Total de acciones necesarias para reconstruir el secreto: {}".format(TOTAL_SHARES, THRESHOLD))
-    print("\nAcciones generadas:")
-    for share in shares:
-        print("Acción {}: {}".format(share[0], share[1]))
+    successful_reconstructions = 0
+    for _ in range(NUM_TESTS):
+        secret_key = int.from_bytes(os.urandom(32), 'big')
+        shares = generate_shares(secret_key)
 
-    reconstructed_secret = reconstruct_secret(shares[:THRESHOLD], THRESHOLD)
-    print("\nSecreto original:     ", secret_key)
-    print("Secreto reconstruido: ", reconstructed_secret)
+        reconstructed_secret  = reconstruct_secret(shares[:THRESHOLD], THRESHOLD)
+
+        if reconstructed_secret == secret_key:
+            successful_reconstructions += 1
+
+    success_rate = successful_reconstructions / NUM_TESTS
+    print("#####   PRUEBA DE SHAMIR   #####\n- Total de acciones generadas: {}\n- Total de acciones necesarias para reconstruir el secreto: {}".format(TOTAL_SHARES, THRESHOLD))
+    print("\nResultados de las pruebas:")
+    print("Número de pruebas realizadas: ", NUM_TESTS)
+    print("Número de reconstrucciones exitosas: ", successful_reconstructions)
+    print("Tasa de éxito: {:.2%}".format(success_rate))
+
 
 if __name__ == '__main__':
     test_shamir()

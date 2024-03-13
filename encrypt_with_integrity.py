@@ -88,7 +88,7 @@ def run_cipher_benchmark(key_size, data_size):
 def measure_brute_force_strength(key_size):
     # Generar datos y contraseña para cifrar
     password = "contraseña_de_prueba"
-    data = os.urandom(1024 * 1024)  # 1 MB de datos aleatorios
+    data = os.urandom(1024 * 1024 * key_size)  # 1 MB de datos aleatorios
 
     # Generar clave secreta utilizando PBKDF2
     salt = os.urandom(key_size // 8)
@@ -129,13 +129,13 @@ def measure_brute_force_strength(key_size):
     except Exception as e:
         # Capturar cualquier excepción que indique un fallo en la descifrado
         elapsed_time = time.time() - start_time
-        return f"Fracasó ({elapsed_time} segundos)"
+        return f"No desencriptado ({elapsed_time} segundos)"
 
     elapsed_time = time.time() - start_time
-    return f"Éxito (Tiempo: {elapsed_time} segundos)\n"
+    return f"Desencriptado (Tiempo: {elapsed_time} segundos)\n"
 
 # Ejecutar pruebas para diferentes tamaños de clave
-for data_size in [1, 16, 64, 256]:
+for data_size in [1, 64, 512]:
     run_cipher_benchmark(128, data_size)
     run_cipher_benchmark(192, data_size)
     run_cipher_benchmark(256, data_size)

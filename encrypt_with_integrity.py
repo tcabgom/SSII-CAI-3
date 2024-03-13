@@ -59,11 +59,17 @@ def decrypt_data(encrypted_data, tag, password, salt, iv):
     return decrypted_data
 
 
-def run_cipher_benchmark(key_size, data_size):
+def read_image(file_path):
+    with open(file_path, 'rb') as image_file:
+        return image_file.read()
+
+
+def run_cipher_benchmark(key_size, path):
     # Generar datos y contraseña para cifrar
-    password = "mi_contraseña_secreta"
-    data = os.urandom(1024*1024*data_size)
-    print("\n#################################################",data_size, "MB #################################################")
+    password = "123456789"
+    #data = os.urandom(1024*1024*data_size)
+    data = read_image(path)
+    print("\n#################################################",path, "#################################################")
     print("#################################################",key_size, "bits #################################################")
 
     # Medir el tiempo de cifrado
@@ -87,8 +93,8 @@ def run_cipher_benchmark(key_size, data_size):
 
 def measure_brute_force_strength(key_size):
     # Generar datos y contraseña para cifrar
-    password = "contraseña_de_prueba"
-    data = os.urandom(1024 * 1024 * key_size)  # 1 MB de datos aleatorios
+    password = "123456789"
+    data = os.urandom(1024 * 1024 * key_size)
 
     # Generar clave secreta utilizando PBKDF2
     salt = os.urandom(key_size // 8)
@@ -134,8 +140,8 @@ def measure_brute_force_strength(key_size):
     elapsed_time = time.time() - start_time
     return f"Desencriptado (Tiempo: {elapsed_time} segundos)\n"
 
-# Ejecutar pruebas para diferentes tamaños de clave
-for data_size in [1, 64, 512]:
-    run_cipher_benchmark(128, data_size)
-    run_cipher_benchmark(192, data_size)
-    run_cipher_benchmark(256, data_size)
+if __name__ == '__main__':
+    for path in ["images/imagen1.png", "images/imagen2.jpg", "images/imagen3.png", "images/imagen4.jpg"]:
+        run_cipher_benchmark(128, path)
+        run_cipher_benchmark(192, path)
+        run_cipher_benchmark(256, path)

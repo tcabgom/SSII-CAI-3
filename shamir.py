@@ -1,4 +1,5 @@
 import random
+import os
 from sympy import symbols, interpolate
 
 THRESHOLD = 5
@@ -21,19 +22,20 @@ def reconstruct_secret(shares, threshold):
     x, y = symbols('x y')
     polynomial = interpolate(shares, x)
 
-    secret = polynomial.subs(x, 0) % prime
+    secret = int(polynomial.subs(x, 0)) % prime
     return secret
 
 def test_shamir():
-    secret_key = 1234567890
-
+    secret_key = int.from_bytes(os.urandom(32), 'big')
     shares = generate_shares(secret_key)
-    print("Acciones generadas:")
+    print("#####   PRUEBA DE SHAMIR   #####\n- Total de acciones generadas: {}\n- Total de acciones necesarias para reconstruir el secreto: {}".format(TOTAL_SHARES, THRESHOLD))
+    print("\nAcciones generadas:")
     for share in shares:
         print("Acción {}: {}".format(share[0], share[1]))
 
     reconstructed_secret = reconstruct_secret(shares[:THRESHOLD], THRESHOLD)
-    print("\nSecreto reconstruido:", reconstructed_secret)
+    print("\nSecreto original:     ", secret_key)
+    print("Secreto reconstruido: ", reconstructed_secret)
 
 if __name__ == '__main__':
     test_shamir()

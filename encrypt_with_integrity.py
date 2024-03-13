@@ -4,10 +4,11 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import os
+import time
 
-def encrypt_data(data, password):
+def encrypt_data(data, password, key_size):
     # Generar una clave secreta utilizando PBKDF2
-    salt = os.urandom(16)
+    salt = os.urandom(key_size)
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
@@ -57,19 +58,80 @@ def decrypt_data(encrypted_data, tag, password, salt, iv):
 
     return decrypted_data
 
-# Ejemplo de uso
-password = "mi_contraseña_secreta"
-data = b"Datos sensibles que quiero cifrar."
 
-# Cifrar los datos
-salt, iv, tag, encrypted_data = encrypt_data(data, password)
+def run_cipher_benchmark(key_size):
+    # Generar datos y contraseña para cifrar
+    password = "mi_contraseña_secreta"
+    data = os.urandom(1024 * 1024)  # 1 MB de datos aleatorios
 
-# Mostrar los datos cifrados y el código de autenticación
-print("Datos cifrados:", encrypted_data)
-print("Código de autenticación:", tag)
+    # Medir el tiempo de cifrado
+    start_time = time.time()
+    salt, iv, tag, encrypted_data = encrypt_data(data, password, key_size)
+    encryption_time = time.time() - start_time
 
-# Descifrar los datos
-decrypted_data = decrypt_data(encrypted_data, tag, password, salt, iv)
+    # Medir el tiempo de descifrado
+    start_time = time.time()
+    decrypted_data = decrypt_data(encrypted_data, tag, password, salt, iv)
+    decryption_time = time.time() - start_time
 
-# Mostrar los datos descifrados
-print("Datos descifrados:", decrypted_data.decode())
+    # Verificar la fortaleza contra ataques de fuerza bruta
+    brute_force_strength = measure_brute_force_strength(key_size)
+
+    # Mostrar resultados
+    print(f"\n### Resultados para clave de {key_size} bits ###")
+    print("Tiempo de cifrado:", encryption_time, "segundos")
+    print("Tiempo de descifrado:", decryption_time, "segundos")
+    print("Fortaleza contra ataques de fuerza bruta:", brute_force_strength)
+
+def measure_brute_force_strength(key_size):
+    # Generar datos y contraseña para cifrar
+    password = "contraseña_de_prueba"
+    data = os.urandom(1024 * 1024)  # 1 MB de datos aleatorios
+
+    # Generar clave secreta utilizando PBKDF2
+    salt = os.urandom(key_size // 8)
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=key_size // 8,
+        salt=salt,
+        iterations=100000,
+        backend=default_backend()
+    )
+    key = kdf.derive(password.encode())
+
+    # Cifrar los datos y calcular el código de autenticación
+    iv = os.urandom(16)
+    cipher = Cipher(algorithms.AES(key), modes.GCM(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    encryptor.authenticate_additional_data(b"additional_data")  # Datos adicionales para autenticar
+
+    # Aplicar relleno PKCS7
+    padder = padding.PKCS7(algorithms.AES.block_size).padder()
+    padded_data = padder.update(data) + padder.finalize()
+
+    # Cifrar los datos con el relleno aplicado
+    encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
+
+    # Simular un ataque de fuerza bruta
+    start_time = time.time()
+    try:
+        # Intentar descifrar los datos con una clave incorrecta
+        incorrect_key = os.urandom(key_size // 8)
+        cipher = Cipher(algorithms.AES(incorrect_key), modes.GCM(iv, encryptor.tag), backend=default_backend())
+        decryptor = cipher.decryptor()
+        decrypted_data_with_padding = decryptor.update(encrypted_data) + decryptor.finalize()
+
+        # Eliminar el relleno
+        unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
+        decrypted_data = unpadder.update(decrypted_data_with_padding) + unpadder.finalize()
+    except Exception as e:
+        # Capturar cualquier excepción que indique un fallo en la descifrado
+        elapsed_time = time.time() - start_time
+        return f"Fracasó ({elapsed_time} segundos)"
+
+    elapsed_time = time.time() - start_time
+    return f"Éxito (Tiempo: {elapsed_time} segundos)"
+
+# Ejecutar pruebas para diferentes tamaños de clave
+for key_size in [32, 24, 16]:
+    run_cipher_benchmark(key_size)
